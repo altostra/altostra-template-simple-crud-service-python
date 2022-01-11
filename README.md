@@ -28,12 +28,12 @@ You have several options to get started with this template:
 ```sh
 $ mkdir simple-crud-service
 $ cd simple-crud-service
-$ alto init --template simple-crud-service-nodejs
+$ alto init --template simple-crud-service-python
 ```
 
-* Create a new project from the [Altostra Web Console](https://app.altostra.com/projects), you can select the `simple-crud-service-nodejs` template from the list.
+* Create a new project from the [Altostra Web Console](https://app.altostra.com/projects), you can select the `simple-crud-service-python` template from the list.
 
-* Apply the template to an existing Altostra project from Visual Studio Code by going to the Altostra view in the main toolbar and clicking on `simple-crud-service-nodejs` in the templates list.
+* Apply the template to an existing Altostra project from Visual Studio Code by going to the Altostra view in the main toolbar and clicking on `simple-crud-service-python` in the templates list.
 
 ## Deploying the project
 
