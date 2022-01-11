@@ -1,38 +1,43 @@
-def success(value):
-  result = {
+import json
+
+def success(value = ''):
+  if type(value) != str:
+    value = json.dumps(value, skipkeys=True)
+
+  return {
     'statusCode': 200,
+    'body': value if value else 'Success!',
   }
-
-  if value:
-    result['body'] = value
-
-  return result
-
 
 def notFound():
-  return { 'statusCode': 404 }
-
-def badRequest():
-  return { 'statusCode': 400 }
-
-def serverError(reason):
-  result = {
-    'statusCode': 500,
+  return {
+    'statusCode': 404,
+    'body': 'Not found'
   }
 
-  if reason:
-    result['body'] = reason
+def badRequest():
+  return {
+    'statusCode': 400,
+    'body': 'Bad request',
+  }
 
-  return result
+def serverError(reason = ''):
+  if type(reason) != str:
+    reason = json.dumps(reason, skipkeys=True)
 
-
+  return {
+    'statusCode': 500,
+    'body': reason if reason else 'Unexpected error occurred',
+  }
 
 def methodNotSupported():
-  return { 'statusCode': 405 }
-
+  return {
+    'statusCode': 405,
+    'body': 'Bad request',
+  }
 
 def trySanitize(value):
   try:
-    return value and value.str()[:36]
+    return value and str(value)[:36]
   except BaseException as err:
     print('Error during value sanitation.\n', err)

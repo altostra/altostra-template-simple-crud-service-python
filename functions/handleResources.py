@@ -3,7 +3,7 @@ import os
 import re
 import json
 from utils import badRequest, notFound, success, serverError, trySanitize, methodNotSupported
-from secrest import token_hex
+from secrets import token_hex
 
 table_name = os.environ.get('TABLE_DATA01')
 aws_region = os.environ.get('AWS_REGION')
@@ -45,20 +45,31 @@ def getResourceAttribute(resource, attr):
 
 def getResourceFromBody(event):
   if not 'body' in event:
-    return badRequest()
+    return {
+      'error': badRequest()
+    }
 
   try:
-    return type(event['body']) == str if json.loads(event['body']) else event['body']
+    parsed_body = json.loads(event['body']) if type(event['body']) == str else event['body']
+    return {
+      'result': parsed_body
+    }
   except BaseException as err:
     print('Failed to parse message body', event['body'], err)
-    return badRequest()
+    return {
+      'error': badRequest()
+    }
 
 def handle_get(event):
   print('Getting resource(s)')
 
   resource_id = None
 
-  if 'pathParameters' in event and 'resourceId' in event['pathParameters']:
+  if (
+    'pathParameters' in event and
+    type(event['pathParameters']) == dict and
+    'resourceId' in event['pathParameters']
+  ):
     resource_id = trySanitizeResourceId(event['pathParameters']['resourceId'])
 
   if resource_id:
@@ -70,7 +81,7 @@ def handle_get(event):
       }
     )
 
-    return 'Item' in resource if success(toResourceResponse(resource.Item)) else notFound()
+    return success(toResourceResponse(resource['Item'])) if 'Item' in resource else notFound()
 
   resources = db.scan(
     TableName=table_name,
@@ -79,17 +90,28 @@ def handle_get(event):
 
   is_found = (resources and
     'Items' in resources and
+    type(resources['Items']) == list and
     len(resources['Items']) > 0)
 
-  return is_found if success([
-    toResourceResponse(x)
-    for x in resources['Items']
-  ]) else notFound()
+  if not is_found:
+    return notFound()
+  else:
+    result = [
+      toResourceResponse(x)
+      for x in resources['Items']
+    ]
+
+    return success(result)
 
 def handle_post(event):
   print('Creating resource')
 
-  resource_info = getResourceFromBody(event)
+  resource_body_result = getResourceFromBody(event)
+
+  if 'error' in resource_body_result:
+    return resource_body_result['error']
+
+  resource_info = resource_body_result['result']
 
   resource_name = getResourceAttribute(resource_info, 'name')
   resource_email = getResourceAttribute(resource_info, 'email')
@@ -109,12 +131,21 @@ def handle_post(event):
     }
   )
 
-  return success()
+  return success({
+    'id': resource_id,
+    'name': resource_name,
+    'email': resource_email,
+  })
 
 def handle_put(event):
   print('Updating resource')
 
-  resource_info = getResourceFromBody(event)
+  resource_body_result = getResourceFromBody(event)
+
+  if 'error' in resource_body_result:
+    return resource_body_result['error']
+
+  resource_info = resource_body_result['result']
 
   resource_name = getResourceAttribute(resource_info, 'name')
   resource_email = getResourceAttribute(resource_info, 'email')
